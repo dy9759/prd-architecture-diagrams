@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross-cutting 架构</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; min-height: 100vh; padding: 2rem; color: white; }
+    .container { max-width: 1280px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot { width: 12px; height: 12px; background: #fb923c; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .diagram-container { background: rgba(15, 23, 42, 0.5); border-radius: 1rem; border: 1px solid #1e293b; padding: 1.5rem; overflow-x: auto; }
+    svg { width: 100%; min-width: 1100px; display: block; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid #1e293b; padding: 1.25rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card-dot.orange { background: #fb923c; }
+    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.375rem; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Cross-cutting 跨模块架构</h1>
+      </div>
+      <p class="subtitle">事件 · 审计 · 服务契约 · MCP 工具 · Inbox · 密钥 · 配额 · 错误码 · 可观测性</p>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 860">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#fb923c" />
+          </marker>
+          <marker id="arrowhead-emerald" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#34d399" />
+          </marker>
+          <marker id="arrowhead-violet" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <text x="40" y="60" fill="#34d399" font-size="11" font-weight="600">① 核心服务层</text>
+        <text x="40" y="330" fill="#fb923c" font-size="11" font-weight="600">② 事件分发 · 审计 · 通知</text>
+        <text x="40" y="620" fill="#fbbf24" font-size="11" font-weight="600">③ 基础设施：MCP 工具 · 密钥 · 配额 · 可观测性</text>
+
+        <!-- =========== Layer 1: Core Services (y ≈ 80-290) =========== -->
+
+        <!-- Scheduler -->
+        <rect x="40" y="80" width="200" height="110" rx="6" fill="#0f172a"/>
+        <rect x="40" y="80" width="200" height="110" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="140" y="108" fill="white" font-size="12" font-weight="600" text-anchor="middle">SchedulerService</text>
+        <text x="140" y="126" fill="#94a3b8" font-size="9" text-anchor="middle">Task 调度 · 状态推进</text>
+        <text x="140" y="142" fill="#94a3b8" font-size="9" text-anchor="middle">重试 / Fallback / 升级</text>
+        <text x="140" y="158" fill="#94a3b8" font-size="9" text-anchor="middle">DAG 依赖解锁</text>
+        <text x="140" y="176" fill="#34d399" font-size="8" text-anchor="middle">订阅 slot:submitted 等事件</text>
+
+        <!-- PlanGenerator -->
+        <rect x="260" y="80" width="220" height="110" rx="6" fill="#0f172a"/>
+        <rect x="260" y="80" width="220" height="110" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="370" y="108" fill="white" font-size="12" font-weight="600" text-anchor="middle">PlanGeneratorService</text>
+        <text x="370" y="126" fill="#94a3b8" font-size="9" text-anchor="middle">LLM 生成 Plan + Task + Slot</text>
+        <text x="370" y="142" fill="#94a3b8" font-size="9" text-anchor="middle">读取 identity_card 分配 Agent</text>
+        <text x="370" y="158" fill="#94a3b8" font-size="9" text-anchor="middle">DAG 校验 + 能力覆盖检查</text>
+        <text x="370" y="176" fill="#34d399" font-size="8" text-anchor="middle">成本上限: 50k in / 4k out</text>
+
+        <!-- MediationService -->
+        <rect x="500" y="80" width="220" height="110" rx="6" fill="#0f172a"/>
+        <rect x="500" y="80" width="220" height="110" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="610" y="108" fill="white" font-size="12" font-weight="600" text-anchor="middle">MediationService</text>
+        <text x="610" y="126" fill="#94a3b8" font-size="9" text-anchor="middle">消息路由 · SLA 升级</text>
+        <text x="610" y="142" fill="#94a3b8" font-size="9" text-anchor="middle">自动摘要 · 防循环</text>
+        <text x="610" y="158" fill="#94a3b8" font-size="9" text-anchor="middle">reply_slot 跟踪</text>
+        <text x="610" y="176" fill="#34d399" font-size="8" text-anchor="middle">scope='conversation' Agent 支撑</text>
+
+        <!-- CloudExecutor -->
+        <rect x="740" y="80" width="220" height="110" rx="6" fill="#0f172a"/>
+        <rect x="740" y="80" width="220" height="110" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="850" y="108" fill="white" font-size="12" font-weight="600" text-anchor="middle">CloudExecutorService</text>
+        <text x="850" y="126" fill="#94a3b8" font-size="9" text-anchor="middle">云端 Execution 轮询</text>
+        <text x="850" y="142" fill="#94a3b8" font-size="9" text-anchor="middle">SDK Session + Sandbox</text>
+        <text x="850" y="158" fill="#94a3b8" font-size="9" text-anchor="middle">MCP 工具转发 · Lease 续约</text>
+        <text x="850" y="176" fill="#34d399" font-size="8" text-anchor="middle">崩溃恢复 (lease 过期接管)</text>
+
+        <!-- Slot/Artifact/Review Service -->
+        <rect x="980" y="80" width="180" height="110" rx="6" fill="#0f172a"/>
+        <rect x="980" y="80" width="180" height="110" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="1070" y="108" fill="white" font-size="12" font-weight="600" text-anchor="middle">Slot / Artifact /</text>
+        <text x="1070" y="126" fill="white" font-size="12" font-weight="600" text-anchor="middle">Review Service</text>
+        <text x="1070" y="146" fill="#94a3b8" font-size="9" text-anchor="middle">激活 / 超时</text>
+        <text x="1070" y="160" fill="#94a3b8" font-size="9" text-anchor="middle">headless ↔ file</text>
+        <text x="1070" y="174" fill="#94a3b8" font-size="9" text-anchor="middle">决策 · Task 回写</text>
+
+        <!-- Event bus below services as connector -->
+        <rect x="40" y="220" width="1120" height="26" rx="4" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="600" y="238" fill="#fb923c" font-size="10" font-weight="600" text-anchor="middle">events.Bus (内部事件总线) — 服务间 publish / subscribe</text>
+
+        <!-- Services -> Bus dashed arrows -->
+        <line x1="140" y1="190" x2="140" y2="220" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="370" y1="190" x2="370" y2="220" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="610" y1="190" x2="610" y2="220" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="850" y1="190" x2="850" y2="220" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="1070" y1="190" x2="1070" y2="220" stroke="#fb923c" stroke-width="1" stroke-dasharray="3,3"/>
+
+        <!-- =========== Layer 2: Events / Audit / Notifications (y ≈ 350-590) =========== -->
+
+        <!-- Bus -> WS Hub -->
+        <line x1="250" y1="246" x2="250" y2="358" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+        <text x="262" y="300" fill="#fb923c" font-size="9">publish</text>
+
+        <!-- Bus -> Activity Log -->
+        <line x1="600" y1="246" x2="600" y2="358" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+
+        <!-- Bus -> Inbox -->
+        <line x1="940" y1="246" x2="940" y2="358" stroke="#fb923c" stroke-width="1.5" marker-end="url(#arrowhead-orange)"/>
+
+        <!-- WebSocket Hub -->
+        <rect x="100" y="360" width="300" height="240" rx="6" fill="#0f172a"/>
+        <rect x="100" y="360" width="300" height="240" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="250" y="386" fill="white" font-size="12" font-weight="600" text-anchor="middle">WebSocket Hub</text>
+        <text x="250" y="402" fill="#94a3b8" font-size="9" text-anchor="middle">realtime.Hub · best-effort</text>
+        <line x1="115" y1="412" x2="385" y2="412" stroke="#1e293b" stroke-width="1"/>
+        <text x="115" y="430" fill="#fb923c" font-size="9" font-weight="600">事件分域:</text>
+        <text x="120" y="446" fill="#94a3b8" font-size="8">Project: project/plan/run/task/slot/execution/</text>
+        <text x="120" y="458" fill="#94a3b8" font-size="8">         artifact/review events</text>
+        <text x="120" y="476" fill="#94a3b8" font-size="8">Account: agent/runtime/impersonation events</text>
+        <text x="120" y="494" fill="#94a3b8" font-size="8">Session: channel/thread/message/</text>
+        <text x="120" y="506" fill="#94a3b8" font-size="8">         thread_context_item events</text>
+        <text x="120" y="524" fill="#94a3b8" font-size="8">Inbox: inbox:item_created/read/resolved</text>
+        <text x="250" y="548" fill="#fb7185" font-size="8" text-anchor="middle">命名: &lt;domain&gt;:&lt;action&gt;</text>
+        <text x="250" y="562" fill="#fb7185" font-size="8" text-anchor="middle">信封: event/workspace_id/payload/routing</text>
+        <text x="250" y="584" fill="#fbbf24" font-size="8" text-anchor="middle">断线重连后前端主动拉取 (不补发)</text>
+
+        <!-- Activity Log -->
+        <rect x="430" y="360" width="320" height="240" rx="6" fill="#0f172a"/>
+        <rect x="430" y="360" width="320" height="240" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="590" y="386" fill="white" font-size="12" font-weight="600" text-anchor="middle">activity_log (审计)</text>
+        <text x="590" y="402" fill="#94a3b8" font-size="9" text-anchor="middle">retention_class = 'permanent'</text>
+        <line x1="445" y1="412" x2="735" y2="412" stroke="#1e293b" stroke-width="1"/>
+        <text x="445" y="432" fill="#a78bfa" font-size="9" font-weight="600">Schema 关键字段:</text>
+        <text x="455" y="448" fill="#94a3b8" font-size="8">• event_type (&lt;domain&gt;:&lt;action&gt;)</text>
+        <text x="455" y="462" fill="#94a3b8" font-size="8">• actor_id / actor_type</text>
+        <text x="455" y="476" fill="#94a3b8" font-size="8">• effective_actor / real_operator (impersonation)</text>
+        <text x="455" y="490" fill="#94a3b8" font-size="8">• related_project/plan/task/slot/execution_id</text>
+        <text x="455" y="504" fill="#94a3b8" font-size="8">• related_channel/thread/agent/runtime_id</text>
+        <text x="455" y="518" fill="#94a3b8" font-size="8">• payload JSONB</text>
+        <line x1="445" y1="528" x2="735" y2="528" stroke="#1e293b" stroke-width="1"/>
+        <text x="590" y="546" fill="#fb7185" font-size="9" text-anchor="middle" font-weight="600">写入规则</text>
+        <text x="590" y="562" fill="#94a3b8" font-size="8" text-anchor="middle">服务层 · 同事务 · 不阻塞主流程</text>
+        <text x="590" y="580" fill="#fbbf24" font-size="8" text-anchor="middle">真相源 · WS 断连时的最终依据</text>
+
+        <!-- Inbox -->
+        <rect x="780" y="360" width="380" height="240" rx="6" fill="#0f172a"/>
+        <rect x="780" y="360" width="380" height="240" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="970" y="386" fill="white" font-size="12" font-weight="600" text-anchor="middle">inbox_item (通知中心)</text>
+        <text x="970" y="402" fill="#94a3b8" font-size="9" text-anchor="middle">扩展字段 + type 枚举</text>
+        <line x1="795" y1="412" x2="1145" y2="412" stroke="#1e293b" stroke-width="1"/>
+        <text x="795" y="432" fill="#fb923c" font-size="9" font-weight="600">新增字段:</text>
+        <text x="805" y="446" fill="#94a3b8" font-size="8">+ task_id · slot_id · plan_id (Project 链路)</text>
+        <text x="805" y="460" fill="#94a3b8" font-size="8">+ thread_id · channel_id (Session 链路)</text>
+        <text x="805" y="474" fill="#94a3b8" font-size="8">+ action_required · severity (info/warning/critical)</text>
+        <text x="805" y="488" fill="#94a3b8" font-size="8">+ resolved_at · resolution · resolution_by</text>
+        <line x1="795" y1="498" x2="1145" y2="498" stroke="#1e293b" stroke-width="1"/>
+        <text x="795" y="514" fill="#fb923c" font-size="9" font-weight="600">type 枚举:</text>
+        <text x="805" y="528" fill="#94a3b8" font-size="8">Project: human_input_needed · review_needed ·</text>
+        <text x="805" y="540" fill="#94a3b8" font-size="8">         task_attention_needed · plan_approval_needed</text>
+        <text x="805" y="554" fill="#94a3b8" font-size="8">Session: reply_slow · mention · dm_received</text>
+        <text x="805" y="568" fill="#94a3b8" font-size="8">Account: impersonation_expiring · agent_suspended</text>
+        <text x="805" y="582" fill="#94a3b8" font-size="8">System:  system_announcement</text>
+
+        <!-- =========== Layer 3: Infrastructure (y ≈ 650-820) =========== -->
+
+        <!-- MCP Tools -->
+        <rect x="40" y="650" width="280" height="170" rx="6" fill="#0f172a"/>
+        <rect x="40" y="650" width="280" height="170" rx="6" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="180" y="676" fill="white" font-size="12" font-weight="600" text-anchor="middle">MCP 工具 (17 个)</text>
+        <text x="180" y="692" fill="#94a3b8" font-size="9" text-anchor="middle">云端 SDK + 本地 CLI 共用</text>
+        <line x1="55" y1="702" x2="305" y2="702" stroke="#1e293b" stroke-width="1"/>
+        <text x="55" y="718" fill="#fbbf24" font-size="8" font-weight="600">Issue:</text>
+        <text x="110" y="718" fill="#94a3b8" font-size="8">get_issue · list_issue_comments · create_comment</text>
+        <text x="55" y="734" fill="#fbbf24" font-size="8" font-weight="600">Project:</text>
+        <text x="110" y="734" fill="#94a3b8" font-size="8">get_project · list_project_files · search_context</text>
+        <text x="55" y="750" fill="#fbbf24" font-size="8" font-weight="600">Artifact:</text>
+        <text x="110" y="750" fill="#94a3b8" font-size="8">upload_artifact · complete_task · request_approval</text>
+        <text x="55" y="766" fill="#fbbf24" font-size="8" font-weight="600">代码:</text>
+        <text x="110" y="766" fill="#94a3b8" font-size="8">read_file · apply_patch · create_pr</text>
+        <text x="55" y="782" fill="#fbbf24" font-size="8" font-weight="600">仅本地:</text>
+        <text x="110" y="782" fill="#fb7185" font-size="8">checkout_repo · local_file_read</text>
+        <text x="180" y="806" fill="#fb7185" font-size="8" text-anchor="middle">权限边界在后端 · 每次调用校验 workspace+user+agent</text>
+
+        <!-- Secrets -->
+        <rect x="340" y="650" width="250" height="170" rx="6" fill="#0f172a"/>
+        <rect x="340" y="650" width="250" height="170" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="465" y="676" fill="white" font-size="12" font-weight="600" text-anchor="middle">密钥与凭证</text>
+        <line x1="355" y1="686" x2="575" y2="686" stroke="#1e293b" stroke-width="1"/>
+        <text x="355" y="706" fill="#fb7185" font-size="9" font-weight="600">workspace_secret:</text>
+        <text x="365" y="722" fill="#94a3b8" font-size="8">• Anthropic / OpenAI Key</text>
+        <text x="365" y="736" fill="#94a3b8" font-size="8">• GitHub / GitLab Token</text>
+        <text x="365" y="750" fill="#94a3b8" font-size="8">• AES-256-GCM 加密</text>
+        <text x="355" y="770" fill="#fb7185" font-size="9" font-weight="600">personal_access_token:</text>
+        <text x="365" y="786" fill="#94a3b8" font-size="8">• Daemon / CLI bootstrap</text>
+        <text x="365" y="800" fill="#94a3b8" font-size="8">• bcrypt hash · scopes</text>
+
+        <!-- Quota -->
+        <rect x="610" y="650" width="250" height="170" rx="6" fill="#0f172a"/>
+        <rect x="610" y="650" width="250" height="170" rx="6" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="735" y="676" fill="white" font-size="12" font-weight="600" text-anchor="middle">workspace_quota</text>
+        <text x="735" y="692" fill="#94a3b8" font-size="9" text-anchor="middle">成本追踪 + 强制机制</text>
+        <line x1="625" y1="702" x2="845" y2="702" stroke="#1e293b" stroke-width="1"/>
+        <text x="625" y="722" fill="#fb923c" font-size="9" font-weight="600">execution 成本字段:</text>
+        <text x="635" y="738" fill="#94a3b8" font-size="8">cost_input_tokens · output_tokens</text>
+        <text x="635" y="752" fill="#94a3b8" font-size="8">cost_usd · cost_provider</text>
+        <text x="625" y="770" fill="#fb923c" font-size="9" font-weight="600">配额上限:</text>
+        <text x="635" y="786" fill="#94a3b8" font-size="8">max_monthly_usd (100 USD)</text>
+        <text x="635" y="800" fill="#fb7185" font-size="8">claim 前拒绝 → QUOTA_EXCEEDED</text>
+
+        <!-- Observability -->
+        <rect x="880" y="650" width="280" height="170" rx="6" fill="#0f172a"/>
+        <rect x="880" y="650" width="280" height="170" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="1020" y="676" fill="white" font-size="12" font-weight="600" text-anchor="middle">可观测性 + 错误码</text>
+        <line x1="895" y1="686" x2="1145" y2="686" stroke="#1e293b" stroke-width="1"/>
+        <text x="895" y="706" fill="#22d3ee" font-size="9" font-weight="600">Metrics (Prometheus):</text>
+        <text x="905" y="720" fill="#94a3b8" font-size="8">execution_duration / count</text>
+        <text x="905" y="732" fill="#94a3b8" font-size="8">scheduler_queue_depth · runtime_load</text>
+        <text x="905" y="744" fill="#94a3b8" font-size="8">plan_gen_tokens · mcp_tool_calls</text>
+        <text x="895" y="762" fill="#22d3ee" font-size="9" font-weight="600">错误码分类:</text>
+        <text x="905" y="776" fill="#94a3b8" font-size="8">&lt;DOMAIN&gt;_&lt;ERROR&gt; · retriable 标记</text>
+        <text x="905" y="788" fill="#94a3b8" font-size="8">DAG_CYCLE / QUOTA_EXCEEDED /</text>
+        <text x="905" y="800" fill="#94a3b8" font-size="8">EXECUTION_LEASE_EXPIRED · ...</text>
+
+        <!-- =========== Legend (y 840) =========== -->
+        <text x="40" y="848" fill="white" font-size="10" font-weight="600">图例:</text>
+        <rect x="90" y="840" width="14" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="108" y="849" fill="#94a3b8" font-size="8">核心服务</text>
+        <rect x="175" y="840" width="14" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
+        <text x="193" y="849" fill="#94a3b8" font-size="8">事件 / Inbox / 配额</text>
+        <rect x="315" y="840" width="14" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="333" y="849" fill="#94a3b8" font-size="8">审计</text>
+        <rect x="380" y="840" width="14" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+        <text x="398" y="849" fill="#94a3b8" font-size="8">密钥</text>
+        <rect x="445" y="840" width="14" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+        <text x="463" y="849" fill="#94a3b8" font-size="8">MCP 工具</text>
+        <rect x="525" y="840" width="14" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="543" y="849" fill="#94a3b8" font-size="8">可观测性 / 指标</text>
+      </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>三大新服务</h3>
+        </div>
+        <ul>
+          <li>• PlanGeneratorService：Thread → LLM → Plan/Task/Slot</li>
+          <li>• MediationService：消息路由 + SLA 升级链 + 防循环</li>
+          <li>• CloudExecutorService：SDK Session + Sandbox 管理 + Lease</li>
+          <li>• 所有服务通过 events.Bus 协作</li>
+          <li>• 每个关键事件必须写 activity_log (同事务)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>事件 vs 审计 分工</h3>
+        </div>
+        <ul>
+          <li>• WebSocket = best-effort 实时推送 (非持久)</li>
+          <li>• activity_log = 保证一致的永久审计 (真相源)</li>
+          <li>• 断线重连后前端主动拉取，不依赖事件补发</li>
+          <li>• inbox_item = 需要人工响应的通知入口</li>
+          <li>• reply_slot = Thread 级 SLA 跟踪 (300/600/900 秒)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>基础设施 MVP</h3>
+        </div>
+        <ul>
+          <li>• 17 个 MCP 工具后端 handler + 每调用权限校验</li>
+          <li>• workspace_secret：AES-256-GCM 主密钥环境变量</li>
+          <li>• workspace_quota：execution claim 前检查 USD 上限</li>
+          <li>• 错误码分类：DOMAIN_NAME + retriable 标记</li>
+          <li>• Metrics：Prometheus 风格 12 个核心指标</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="footer">跨模块 PRD · 2026-04-17 · 16 章节 · 三主 PRD 的配套规格</p>
+  </div>
+</body>
+</html>

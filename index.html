@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD 架构图集</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'JetBrains Mono', monospace; background: #020617; min-height: 100vh; padding: 2rem; color: white; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { margin-bottom: 3rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot { width: 12px; height: 12px; background: #34d399; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.9rem; margin-left: 1.75rem; margin-top: 0.25rem; }
+    .meta { color: #475569; font-size: 0.75rem; margin-left: 1.75rem; margin-top: 0.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; }
+    .card {
+      display: block;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: white;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      border-color: #334155;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    .card-accent {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .card.c-cyan .card-accent { background: #22d3ee; }
+    .card.c-rose .card-accent { background: #fb7185; }
+    .card.c-orange .card-accent { background: #fb923c; }
+    .card.c-violet .card-accent { background: #a78bfa; }
+    .card.c-emerald .card-accent { background: #34d399; }
+    .card-num {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .card h2 { font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .card p { color: #94a3b8; font-size: 0.8rem; line-height: 1.55; margin-bottom: 1rem; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.7rem; line-height: 1.6; }
+    .card li { padding-left: 0.75rem; position: relative; }
+    .card li::before { content: "•"; position: absolute; left: 0; }
+    .card.c-cyan li::before { color: #22d3ee; }
+    .card.c-rose li::before { color: #fb7185; }
+    .card.c-orange li::before { color: #fb923c; }
+    .card.c-violet li::before { color: #a78bfa; }
+    .card.c-emerald li::before { color: #34d399; }
+    .arrow { color: #475569; font-size: 0.75rem; margin-top: 1rem; }
+    .section-title {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 2.5rem 0 1rem 0;
+    }
+    .footer { text-align: center; margin-top: 3rem; color: #475569; font-size: 0.75rem; line-height: 1.8; }
+    .footer a { color: #64748b; text-decoration: none; }
+    .footer a:hover { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>PRD 架构图集</h1>
+      </div>
+      <p class="subtitle">Project · Account · Session-Channel · Cross-cutting 四份 PRD 的架构可视化</p>
+      <p class="meta">2026-04-17 · 深色主题 · 内联 SVG · 响应式</p>
+    </div>
+
+    <div class="section-title">模块架构 · Per-PRD Diagrams</div>
+
+    <div class="grid">
+      <a class="card c-cyan" href="01-project-architecture.html">
+        <div class="card-accent"></div>
+        <div class="card-num">01 · Project PRD</div>
+        <h2>Project 模块架构</h2>
+        <p>五层对象模型 + Slot 驱动的人机协作 + 双路径执行</p>
+        <ul>
+          <li>Project → Version → Plan → Task → Slot 五层</li>
+          <li>ProjectRun / Execution / Artifact / Review</li>
+          <li>Channel/Thread 绑定</li>
+          <li>本地 Daemon + CloudExecutorService 两路</li>
+        </ul>
+        <div class="arrow">打开图表 →</div>
+      </a>
+
+      <a class="card c-rose" href="02-account-architecture.html">
+        <div class="card-accent"></div>
+        <div class="card-num">02 · Account PRD</div>
+        <h2>Account 模块架构</h2>
+        <p>Organization → Owner → Agent 层级 + 三层分离 + RBAC 三维矩阵</p>
+        <ul>
+          <li>System / Personal Agent 隶属关系</li>
+          <li>Provider / Runtime / Agent 三层分离</li>
+          <li>Identity Card + Impersonation 审计</li>
+          <li>管理权限 + 功能权限 + 风险分级 + 数据权限</li>
+        </ul>
+        <div class="arrow">打开图表 →</div>
+      </a>
+
+      <a class="card c-orange" href="03-cross-cutting-architecture.html">
+        <div class="card-accent"></div>
+        <div class="card-num">03 · Cross-cutting PRD</div>
+        <h2>跨模块架构</h2>
+        <p>事件 · 审计 · 服务契约 · MCP 工具 · 密钥 · 配额 · 可观测性</p>
+        <ul>
+          <li>PlanGenerator / Mediation / CloudExecutor</li>
+          <li>WebSocket Hub + events.Bus + activity_log</li>
+          <li>inbox_item 扩展 + reply_slot SLA</li>
+          <li>17 MCP 工具 + workspace_secret + quota</li>
+        </ul>
+        <div class="arrow">打开图表 →</div>
+      </a>
+
+      <a class="card c-violet" href="04-session-channel-architecture.html">
+        <div class="card-accent"></div>
+        <div class="card-num">04 · Session/Channel PRD</div>
+        <h2>Session/Channel 重构</h2>
+        <p>Session 废弃 · Channel/Thread 统一 · ThreadContextItem 结构化 · 6 阶段迁移</p>
+        <ul>
+          <li>Thread.id 独立 UUID（解耦 root message）</li>
+          <li>ThreadContextItem 替代 session.context</li>
+          <li>session_migration_map 兼容期转写</li>
+          <li>MediationService 统一路由 + 防循环</li>
+        </ul>
+        <div class="arrow">打开图表 →</div>
+      </a>
+    </div>
+
+    <div class="section-title">整体集成 · Integrated View</div>
+
+    <div class="grid">
+      <a class="card c-emerald" href="05-overall-architecture.html" style="grid-column: 1 / -1;">
+        <div class="card-accent"></div>
+        <div class="card-num">05 · Overall Integration</div>
+        <h2>整体集成架构</h2>
+        <p>四 PRD 统一视图 · 6 层分层 · 跨模块绑定关系 · Channel / Agent / Project 三角核心</p>
+        <ul>
+          <li>L1 前端 · L2 服务 + RBAC · L3 执行层 · L4 事件/审计/通知 · L5 数据 · L6 基础设施</li>
+          <li>业务数据按 Project / Account / Session 三域分组</li>
+          <li>execution 队列 + 双路径 + context_ref 物理事实</li>
+          <li>retention_class 统一数据生命周期策略</li>
+        </ul>
+        <div class="arrow">打开图表 →</div>
+      </a>
+    </div>
+
+    <p class="footer">
+      基于 2026-04-16/17 四份 PRD 生成 · 使用 <a href="https://github.com/dy9759/prd-architecture-diagrams">architecture-diagram skill</a><br>
+      <a href="https://github.com/dy9759/prd-architecture-diagrams">View source on GitHub</a>
+    </p>
+  </div>
+</body>
+</html>
