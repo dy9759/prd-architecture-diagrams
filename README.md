@@ -6,6 +6,14 @@
 
 ## Diagrams
 
+### 参考模型 · Reference
+
+| # | 图 | 范围 |
+|---|---|---|
+| 00 | [AI Agent Platform · 7-Layer 参考架构](agent-platform-architecture.html) | 通用 Agent 平台 7 层参考模型 |
+
+### 模块架构 · Per-PRD
+
 | # | 图 | PRD |
 |---|---|---|
 | 01 | [Project 模块架构](01-project-architecture.html) | Project 重构 PRD |
